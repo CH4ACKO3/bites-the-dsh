@@ -1,3 +1,5 @@
+allowBuilds:
+  dsh-harmony: true
 minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-agent-default-model@0.1.0-rc.8'
   - '@deepseek-ai/dsh-agent-presets@0.1.0-rc.8'
@@ -49,3 +51,21 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-user-approval@0.1.0-rc.8'
   - '@deepseek-ai/dsh-user-questions@0.1.0-rc.8'
   - '@deepseek-ai/dsh-workspace@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-client-locale@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-client-ui-conversation@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-client-ui-input-trigger@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-client-ui-layout@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-client-ui-settings@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-client-ui-slots@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-client-ui-theme@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-permission-presets@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-plan-mode@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-sandbox-policy@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-sandbox@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-session-stats@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-shell@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-subprocess@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-token-meter@0.1.0-rc.8'
+  - '@deepseek-ai/dsh-tool-todo@0.1.0-rc.8'
+  - dsh-harmony-react@0.2.4
+  - dsh-harmony@0.6.0
