@@ -1,0 +1,89 @@
+{
+  "name": "@ch4acko3/dsh-bites-the-dust",
+  "version": "0.1.0",
+  "description": "Read-only, scriptable session playback for the DeepSeek Harness WebUI",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "pnpm run build:client && pnpm run build:host",
+    "build:client": "tsdown --config-loader unrun && tsc -p tsconfig.client.build.json",
+    "build:host": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "test": "node --test test/*.test.ts",
+    "check": "pnpm run typecheck && pnpm run test && pnpm run build",
+    "prepare": "pnpm run build"
+  },
+  "engines": {
+    "node": "^22.22.3 || >=24.11.1"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "dsh": {
+    "plugin": {
+      "schemaVersion": 1,
+      "displayName": {
+        "en": "Bites the Dust",
+        "zh-CN": "败者食尘"
+      },
+      "summary": {
+        "en": "Read-only, scriptable playback inside the native DSH conversation.",
+        "zh-CN": "在 DSH 原生会话内提供完全只读、可脚本控制的历史回放。"
+      },
+      "category": "ui"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime"
+      ],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-runtime": "0.1.0-rc.8"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-runtime": "0.1.0-rc.8",
+    "@types/node": "^24.10.0",
+    "tsdown": "0.22.14",
+    "typescript": "^6.0.3",
+    "unrun": "^0.3.1"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "session-replay",
+    "time-travel"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CH4ACKO3/dsh-bites-the-dust.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
