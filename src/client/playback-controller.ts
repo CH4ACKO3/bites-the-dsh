@@ -269,7 +269,12 @@ export class SessionPlaybackController implements SessionPlayback {
     const state = this.#requirePlayback(sessionId)
     const runtime = this.#runtime(sessionId)
     const index = runtime.events.findIndex((event) => event.seq === state.cursorSeq)
-    const next = runtime.events[index + direction]
+    const current = runtime.events[index]
+    const next = direction === -1
+      && current !== undefined
+      && state.cursorTime > current.time
+      ? current
+      : runtime.events[index + direction]
     this.#cancelFrame(sessionId)
     if (next === undefined) {
       this.#update(sessionId, (current) => ({ ...current, mode: 'paused', direction }))

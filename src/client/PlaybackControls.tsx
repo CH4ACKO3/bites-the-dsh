@@ -93,10 +93,11 @@ function PositionControl({
       step={mode === 'time' ? 'any' : 1}
       value={draft}
       disabled={maximum <= minimum}
-      onChange={(event) => setDraft(event.currentTarget.valueAsNumber)}
-      onPointerUp={(event) => commit(event.currentTarget.valueAsNumber)}
-      onKeyUp={(event) => commit(event.currentTarget.valueAsNumber)}
-      onBlur={(event) => commit(event.currentTarget.valueAsNumber)}
+      onChange={(event) => {
+        const value = event.currentTarget.valueAsNumber
+        setDraft(value)
+        commit(value)
+      }}
     />
     <output className="dsh-btd-position" title={positionLabel}>{positionLabel}</output>
   </span>
@@ -172,9 +173,11 @@ export function PlaybackControls({ sessionId, usePlayback, playback, t }: Playba
     </button>
   }
 
-  const atBase = state.cursorSeq <= state.loadedBaseSeq
-  const atHead = state.cursorSeq >= state.liveHeadSeq
   const position = playback.getPosition(sessionId)
+  const atBase = state.cursorSeq <= state.loadedBaseSeq
+    && state.cursorTime <= position.startTime
+  const atHead = state.cursorSeq >= state.liveHeadSeq
+    && state.cursorTime >= position.endTime
   const togglePlay = (direction: PlaybackDirection) => {
     if (state.mode === 'playing' && state.direction === direction) playback.pause(sessionId)
     else playback.play(sessionId, direction)

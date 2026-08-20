@@ -218,6 +218,25 @@ test('playback continues forward and backward from time between events', () => {
   assert.equal(playback.getState('session').cursorTime, 200)
 })
 
+test('manual time seeking honors both endpoints and the nearest backward event', () => {
+  const playback = new SessionPlaybackController(new FakeFrameClock())
+  playback.syncEvents('session', initialEvents, false)
+  playback.enter('session')
+
+  playback.seekTime('session', 100)
+  assert.equal(playback.getState('session').cursorSeq, 2)
+  assert.equal(playback.getState('session').cursorTime, 100)
+
+  playback.seekTime('session', 300)
+  assert.equal(playback.getState('session').cursorSeq, 8)
+  assert.equal(playback.getState('session').cursorTime, 300)
+
+  playback.seekTime('session', 150)
+  playback.step('session', -1)
+  assert.equal(playback.getState('session').cursorSeq, 2)
+  assert.equal(playback.getState('session').cursorTime, 100)
+})
+
 test('reverse playback hides an event as the frame clock leaves its timestamp', () => {
   const clock = new FakeFrameClock()
   const playback = new SessionPlaybackController(clock)
