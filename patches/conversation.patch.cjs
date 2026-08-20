@@ -15,7 +15,7 @@ module.exports = [
     operation: {
       kind: 'decorate',
       with: {
-        module: '@ch4acko3/dsh-bites-the-dust',
+        module: '@ch4acko3/bites-the-dsh',
         export: 'decorateConversationRoot',
       },
     },
@@ -28,7 +28,7 @@ module.exports = [
     operation: {
       kind: 'decorate',
       with: {
-        module: '@ch4acko3/dsh-bites-the-dust',
+        module: '@ch4acko3/bites-the-dsh',
         export: 'decorateChatView',
       },
     },
@@ -41,7 +41,7 @@ module.exports = [
     operation: {
       kind: 'decorate',
       with: {
-        module: '@ch4acko3/dsh-bites-the-dust',
+        module: '@ch4acko3/bites-the-dsh',
         export: 'decorateInputBar',
       },
     },
@@ -54,7 +54,7 @@ module.exports = [
     operation: {
       kind: 'decorate',
       with: {
-        module: '@ch4acko3/dsh-bites-the-dust',
+        module: '@ch4acko3/bites-the-dsh',
         export: 'decorateMessageIconActions',
       },
     },

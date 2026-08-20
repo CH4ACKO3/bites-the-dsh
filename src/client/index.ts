@@ -30,7 +30,7 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
-export const name = '@ch4acko3/dsh-bites-the-dust'
+export const name = '@ch4acko3/bites-the-dsh'
 export const inject = [
   'slots',
   'sessions',
@@ -50,7 +50,7 @@ export function apply(ctx: ClientContext): void {
 
   ctx.effect(
     () => ctx.locale.register(PLAYBACK_LOCALE_NAMESPACE, playbackDictionaries),
-    'dsh-bites-the-dust: dictionaries',
+    'bites-the-dsh: dictionaries',
   )
   const t = ctx.locale.bind(PLAYBACK_LOCALE_NAMESPACE)
   playback.setReadonlyEffect((sessionId, active) => {
@@ -110,7 +110,7 @@ export function apply(ctx: ClientContext): void {
       historyLoads.clear()
       playback.dispose()
     }
-  }, 'dsh-bites-the-dust: playback session feed')
+  }, 'bites-the-dsh: playback session feed')
 
   ctx.slots.inject('conversation.session.header.actions', () => ctx.slots.register({
     name: 'conversation.session.header.actions',
@@ -120,7 +120,7 @@ export function apply(ctx: ClientContext): void {
     inject: () => ({ playback }),
   }, PlaybackControls))
 
-  ctx.effect(installPlaybackStyles, 'dsh-bites-the-dust: styles')
+  ctx.effect(installPlaybackStyles, 'bites-the-dsh: styles')
 }
 
 export {

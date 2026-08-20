@@ -1,4 +1,4 @@
-const STYLE_ID = '@ch4acko3/dsh-bites-the-dust/client'
+const STYLE_ID = '@ch4acko3/bites-the-dsh/client'
 
 const styles = `
 .dsh-btd-enter,
@@ -288,7 +288,7 @@ const styles = `
 export function installPlaybackStyles(): () => void {
   if (document.querySelector(`style[data-plugin-css="${STYLE_ID}"]`) !== null) return () => {}
   const tag = document.createElement('style')
-  tag.dataset.plugin = '@ch4acko3/dsh-bites-the-dust'
+  tag.dataset.plugin = '@ch4acko3/bites-the-dsh'
   tag.dataset.pluginCss = STYLE_ID
   tag.textContent = styles
   document.head.appendChild(tag)

@@ -13,7 +13,7 @@ type ConversationRootRuntimeProps = ConversationSlotProps & {
   sessionId: SessionId | undefined
 }
 
-const NO_SESSION_PLAYBACK_KEY = '__dsh-bites-the-dust:no-session__'
+const NO_SESSION_PLAYBACK_KEY = '__bites-the-dsh:no-session__'
 const HistoricalPlaybackContext = createContext(false)
 
 type InputBarRuntimeProps = Record<string, unknown> & { disabled?: boolean }

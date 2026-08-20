@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsdown'
 
 const moduleHeader = `window.__ModuleLoader__.load({
-  id: "@ch4acko3/dsh-bites-the-dust",
+  id: "@ch4acko3/bites-the-dsh",
   factory: (require) => {
     const module = { exports: {} };
     const exports = module.exports;`

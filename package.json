@@ -1,5 +1,5 @@
 {
-  "name": "@ch4acko3/dsh-bites-the-dust",
+  "name": "@ch4acko3/bites-the-dsh",
   "version": "0.1.0",
   "description": "Read-only, scriptable session playback for the DeepSeek Harness WebUI",
   "type": "module",
@@ -107,7 +107,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CH4ACKO3/dsh-bites-the-dust.git"
+    "url": "git+https://github.com/CH4ACKO3/bites-the-dsh.git"
   },
   "publishConfig": {
     "access": "public"

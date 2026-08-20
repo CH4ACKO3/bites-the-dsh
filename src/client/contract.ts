@@ -28,7 +28,7 @@ export type PlaybackLocaleKey =
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    'dsh-bites-the-dust': PlaybackLocaleKey
+    'bites-the-dsh': PlaybackLocaleKey
   }
 
   interface SessionStandardProps {

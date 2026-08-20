@@ -44,5 +44,5 @@ test('Harmony component patches each match the rc.8 conversation bundle exactly 
   assert.match(source, /decorateChatView/)
   assert.match(source, /decorateInputBar/)
   assert.match(source, /decorateMessageIconActions/)
-  assert.match(source, /@ch4acko3\/dsh-bites-the-dust/)
+  assert.match(source, /@ch4acko3\/bites-the-dsh/)
 })

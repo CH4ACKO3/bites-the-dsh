@@ -1,7 +1,7 @@
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PlaybackLocaleKey } from './contract.js'
 
-export const PLAYBACK_LOCALE_NAMESPACE = 'dsh-bites-the-dust' as const
+export const PLAYBACK_LOCALE_NAMESPACE = 'bites-the-dsh' as const
 
 const en: Record<PlaybackLocaleKey, string> = {
   enter: 'Replay session',

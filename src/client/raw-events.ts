@@ -103,10 +103,10 @@ const rawEventView: ConversationViewDefinition<PlaybackEventNode, PlaybackEventS
 export function registerPlaybackEvents(ctx: ClientContext): void {
   ctx.effect(
     () => ctx.conversationViews.register(rawEventView),
-    'dsh-bites-the-dust: raw event view',
+    'bites-the-dsh: raw event view',
   )
   ctx.effect(
     () => ctx.conversationEvents.register(rawEventDefinition),
-    'dsh-bites-the-dust: raw event definition',
+    'bites-the-dsh: raw event definition',
   )
 }
