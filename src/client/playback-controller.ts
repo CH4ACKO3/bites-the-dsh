@@ -5,6 +5,7 @@ export type PlaybackRate = (typeof PLAYBACK_RATES)[number]
 export type PlaybackIdleLimit = (typeof PLAYBACK_IDLE_LIMITS)[number]
 export type PlaybackDirection = 1 | -1
 export type PlaybackMode = 'live' | 'paused' | 'playing'
+export type HistoryLoadStatus = 'idle' | 'loading' | 'failed'
 
 export interface PlaybackEventClock {
   readonly seq: number
@@ -34,6 +35,7 @@ export interface PlaybackState {
   skipIdle: boolean
   idleLimit: PlaybackIdleLimit
   simulateTyping: boolean
+  historyLoadStatus: HistoryLoadStatus
 }
 
 export interface PlaybackFrameClock {
@@ -52,6 +54,7 @@ export interface SessionPlayback {
   setSkipIdle(sessionId: string, skipIdle: boolean): void
   setIdleLimit(sessionId: string, limit: PlaybackIdleLimit): void
   setSimulateTyping(sessionId: string, simulateTyping: boolean): void
+  retryOlderHistory(sessionId: string): Promise<void>
   getPosition(sessionId: string): PlaybackPosition
   seekEvent(sessionId: string, event: number): void
   seekTurn(sessionId: string, turn: number): void
@@ -80,6 +83,9 @@ interface SessionPlaybackRuntime {
     readonly duration: number
     elapsed: number
   } | null
+  historyLoader: (() => Promise<void>) | null
+  historyLoad: Promise<void> | null
+  lastHistoryBaseSeq: number | null
 }
 
 const browserFrameClock: PlaybackFrameClock = {
@@ -100,6 +106,7 @@ function initialState(): PlaybackState {
     skipIdle: true,
     idleLimit: 1_000,
     simulateTyping: false,
+    historyLoadStatus: 'idle',
   }
 }
 
@@ -112,6 +119,9 @@ function initialRuntime(): SessionPlaybackRuntime {
     frameId: null,
     frameTime: null,
     segment: null,
+    historyLoader: null,
+    historyLoad: null,
+    lastHistoryBaseSeq: null,
   }
 }
 
@@ -191,6 +201,9 @@ export class SessionPlaybackController implements SessionPlayback {
       loadedBaseSeq: first,
       liveHeadSeq: head,
       hasMoreHistory,
+      historyLoadStatus: state.loadedBaseSeq !== first || !hasMoreHistory
+        ? 'idle'
+        : state.historyLoadStatus,
       cursorSeq: state.mode === 'live'
         ? head
         : Math.min(head, Math.max(first, state.cursorSeq)),
@@ -311,6 +324,40 @@ export class SessionPlaybackController implements SessionPlayback {
   setSimulateTyping(sessionId: string, simulateTyping: boolean): void {
     this.#requirePlayback(sessionId)
     this.#update(sessionId, (state) => ({ ...state, simulateTyping }))
+  }
+
+  setHistoryLoader(sessionId: string, loader: (() => Promise<void>) | null): void {
+    this.#runtime(sessionId).historyLoader = loader
+  }
+
+  async loadOlder(sessionId: string, retry = false): Promise<void> {
+    const state = this.#requirePlayback(sessionId)
+    const runtime = this.#runtime(sessionId)
+    if (!state.hasMoreHistory || runtime.historyLoader === null) return
+    if (runtime.historyLoad !== null) return runtime.historyLoad
+    if (!retry && runtime.lastHistoryBaseSeq === state.loadedBaseSeq) return
+
+    runtime.lastHistoryBaseSeq = state.loadedBaseSeq
+    this.#update(sessionId, (current) => ({ ...current, historyLoadStatus: 'loading' }))
+    const load = (async () => {
+      try {
+        await runtime.historyLoader?.()
+        if (this.#runtimes.get(sessionId) === runtime) {
+          this.#update(sessionId, (current) => ({ ...current, historyLoadStatus: 'idle' }))
+        }
+      } catch {
+        if (this.#runtimes.get(sessionId) === runtime) {
+          this.#update(sessionId, (current) => ({ ...current, historyLoadStatus: 'failed' }))
+        }
+      }
+    })()
+    runtime.historyLoad = load
+    await load
+    if (runtime.historyLoad === load) runtime.historyLoad = null
+  }
+
+  retryOlderHistory(sessionId: string): Promise<void> {
+    return this.loadOlder(sessionId, true)
   }
 
   getPosition(sessionId: string): PlaybackPosition {
@@ -562,6 +609,7 @@ export class SessionPlaybackController implements SessionPlayback {
       && next.skipIdle === current.skipIdle
       && next.idleLimit === current.idleLimit
       && next.simulateTyping === current.simulateTyping
+      && next.historyLoadStatus === current.historyLoadStatus
     ) return
 
     this.#states.set(sessionId, next)

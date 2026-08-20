@@ -12,6 +12,7 @@ export type PlaybackLocaleKey =
   | 'pause'
   | 'forward'
   | 'stepForward'
+  | 'retryOlderHistory'
   | 'rate'
   | 'skipIdle'
   | 'simulateTyping'

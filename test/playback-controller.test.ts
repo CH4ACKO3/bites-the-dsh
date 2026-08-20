@@ -69,6 +69,7 @@ test('live mode follows the live head', () => {
     skipIdle: true,
     idleLimit: 1_000,
     simulateTyping: false,
+    historyLoadStatus: 'idle',
   })
 })
 
@@ -93,6 +94,34 @@ test('historical playback remains fixed while live events arrive', () => {
 
   assert.equal(playback.getState('session').cursorSeq, 3)
   assert.equal(playback.getState('session').liveHeadSeq, 12)
+})
+
+test('failed older-history loads stay retryable without looping', async () => {
+  const playback = new SessionPlaybackController()
+  let attempts = 0
+  let fail = true
+  playback.syncEvents('session', initialEvents, true)
+  playback.enter('session')
+  playback.seekEvent('session', 1)
+  playback.setHistoryLoader('session', async () => {
+    attempts += 1
+    if (fail) throw new Error('offline')
+  })
+
+  await playback.loadOlder('session')
+  assert.equal(attempts, 1)
+  assert.equal(playback.getState('session').historyLoadStatus, 'failed')
+
+  await playback.loadOlder('session')
+  assert.equal(attempts, 1)
+
+  fail = false
+  await playback.retryOlderHistory('session')
+  assert.equal(attempts, 2)
+  assert.equal(playback.getState('session').historyLoadStatus, 'idle')
+
+  await playback.loadOlder('session')
+  assert.equal(attempts, 2)
 })
 
 test('exiting playback returns to the live head', () => {

@@ -43,7 +43,6 @@ export const inject = [
 export function apply(ctx: ClientContext): void {
   const playback = playbackController
   const sessionSubscriptions = new Map<string, () => void>()
-  const historyLoads = new Set<string>()
 
   registerPlaybackEvents(ctx)
   configurePlaybackProjection(ctx)
@@ -60,6 +59,7 @@ export function apply(ctx: ClientContext): void {
 
   const attach = (binding: SessionBinding) => {
     if (!sessionSubscriptions.has(binding.sessionId)) {
+      playback.setHistoryLoader(binding.sessionId, () => binding.session.loadOlder())
       const sync = () => {
         const snapshot = binding.session.getSnapshot()
         const events = playbackEventsOf(snapshot).entries.map(({ event, location }) => ({
@@ -80,13 +80,9 @@ export function apply(ctx: ClientContext): void {
           || state.cursorSeq > state.loadedBaseSeq
           || !snapshot.hasMore
           || snapshot.loadingOlder
-          || historyLoads.has(binding.sessionId)
         ) return
 
-        historyLoads.add(binding.sessionId)
-        void binding.session.loadOlder()
-          .catch(() => undefined)
-          .finally(() => historyLoads.delete(binding.sessionId))
+        void playback.loadOlder(binding.sessionId)
       })
       sessionSubscriptions.set(binding.sessionId, () => {
         unsubscribePlayback()
@@ -107,7 +103,6 @@ export function apply(ctx: ClientContext): void {
       disposeProvider()
       for (const unsubscribe of sessionSubscriptions.values()) unsubscribe()
       sessionSubscriptions.clear()
-      historyLoads.clear()
       playback.dispose()
     }
   }, 'bites-the-dsh: playback session feed')

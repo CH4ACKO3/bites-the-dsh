@@ -178,6 +178,12 @@ export function PlaybackControls({ sessionId, usePlayback, playback, t }: Playba
     && state.cursorTime <= position.startTime
   const atHead = state.cursorSeq >= state.liveHeadSeq
     && state.cursorTime >= position.endTime
+  const retryOlderHistory = atBase && state.historyLoadStatus === 'failed'
+  const backwardDisabled = atBase && !retryOlderHistory
+  const runBackward = (action: () => void) => {
+    if (retryOlderHistory) void playback.retryOlderHistory(sessionId)
+    else action()
+  }
   const togglePlay = (direction: PlaybackDirection) => {
     if (state.mode === 'playing' && state.direction === direction) playback.pause(sessionId)
     else playback.play(sessionId, direction)
@@ -195,8 +201,8 @@ export function PlaybackControls({ sessionId, usePlayback, playback, t }: Playba
       </span>
       <PositionControl sessionId={sessionId} playback={playback} position={position} t={t} />
       <span className="dsh-btd-divider" aria-hidden="true" />
-      <IconButton label={t('stepBack')} kind="step-back" disabled={atBase} onClick={() => playback.step(sessionId, -1)} />
-      <IconButton label={t('reverse')} kind="reverse" active={state.mode === 'playing' && state.direction === -1} disabled={atBase} onClick={() => togglePlay(-1)} />
+      <IconButton label={t(retryOlderHistory ? 'retryOlderHistory' : 'stepBack')} kind="step-back" disabled={backwardDisabled} onClick={() => runBackward(() => playback.step(sessionId, -1))} />
+      <IconButton label={t(retryOlderHistory ? 'retryOlderHistory' : 'reverse')} kind="reverse" active={state.mode === 'playing' && state.direction === -1} disabled={backwardDisabled} onClick={() => runBackward(() => togglePlay(-1))} />
       <IconButton label={t('pause')} kind="pause" disabled={state.mode !== 'playing'} onClick={() => playback.pause(sessionId)} />
       <IconButton label={t('forward')} kind="forward" active={state.mode === 'playing' && state.direction === 1} disabled={atHead} onClick={() => togglePlay(1)} />
       <IconButton label={t('stepForward')} kind="step-forward" disabled={atHead} onClick={() => playback.step(sessionId, 1)} />
