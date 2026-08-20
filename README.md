@@ -1,10 +1,10 @@
-# bites-the-dsh
+# Bites the DSH
 
 Read-only, scriptable session playback for the DeepSeek Harness WebUI.
 
 https://github.com/user-attachments/assets/3c9dfdcf-a454-4750-9edf-76771ed5a9a6
 
-The demo shows Bites the Dust together with [dsh-turn-fold](https://github.com/CH4ACKO3/dsh-turn-fold).
+The demo shows Bites the DSH together with [dsh-turn-fold](https://github.com/CH4ACKO3/dsh-turn-fold).
 
 The plugin turns the native conversation into a replay view without opening a separate panel. A single native session-header control enters replay. While replay is active, the conversation is fully read-only: the native composer and session-changing interactions are blocked, while UI and scripts may move time without mutating the source session.
 
