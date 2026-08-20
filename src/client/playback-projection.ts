@@ -6,7 +6,7 @@ import {
   type ConversationSnapshot,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import type { PlaybackState } from './playback-controller.js'
-import { withPlaybackClock } from './projection-clock.js'
+import { withConversationPlaybackClock } from './projection-clock.js'
 import {
   EMPTY_PLAYBACK_EVENTS,
   PLAYBACK_TARGET,
@@ -35,12 +35,22 @@ export function projectConversationSnapshot(
   playback: PlaybackState,
 ): ConversationSnapshot {
   if (playback.mode === 'live') return snapshot
+  return withConversationPlaybackClock(
+    projectConversationSnapshotAtCursor(snapshot, playback.cursorSeq),
+    playback.cursorTime,
+  )
+}
+
+export function projectConversationSnapshotAtCursor(
+  snapshot: ConversationSnapshot,
+  cursorSeq: number,
+): ConversationSnapshot {
   if (conversationRuntime === undefined) {
     throw new Error('Playback projection runtime is not configured')
   }
 
   const inputs = playbackEventsOf(snapshot).entries
-    .filter(({ event }) => event.seq <= playback.cursorSeq)
+    .filter(({ event }) => event.seq <= cursorSeq)
     .map(({ event, view }) => ({ event, view }))
   const assembler = new ConversationNodeAssembler(
     conversationRuntime.events,
@@ -53,20 +63,16 @@ export function projectConversationSnapshot(
   if (chat === undefined) {
     throw new Error('Playback projection could not resolve the native chat view')
   }
-  const projectedChat = {
-    ...chat,
-    timeline: withPlaybackClock(chat.timeline, playback.cursorTime),
-  }
   const views = {
     get: (target: string) => target === 'chat'
-      ? projectedChat
+      ? chat
       : (assembler as unknown as { get(target: string): unknown }).get(target),
   } as ConversationSnapshot['views']
 
   return {
     ...snapshot,
     views,
-    chat: projectedChat,
+    chat,
     nodes: chat.legacy.nodes,
     turnTimings: chat.legacy.turnTimings,
     turnEnds: chat.legacy.turnEnds,

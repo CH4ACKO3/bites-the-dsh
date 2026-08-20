@@ -68,6 +68,7 @@ export type PlaybackReadonlyEffect = (sessionId: string, active: boolean) => voi
 
 interface SessionPlaybackRuntime {
   events: readonly PlaybackEventClock[]
+  eventIndexBySeq: ReadonlyMap<number, number>
   turns: readonly {
     readonly firstSeq: number
     readonly lastSeq: number
@@ -113,6 +114,7 @@ function initialState(): PlaybackState {
 function initialRuntime(): SessionPlaybackRuntime {
   return {
     events: [],
+    eventIndexBySeq: new Map(),
     turns: [],
     startTime: 0,
     endTime: 0,
@@ -177,6 +179,7 @@ export class SessionPlaybackController implements SessionPlayback {
 
     const runtime = this.#runtime(sessionId)
     runtime.events = events
+    runtime.eventIndexBySeq = new Map(events.map((event, index) => [event.seq, index]))
     const turns = new Map<number, { firstSeq: number; lastSeq: number }>()
     for (const event of events) {
       if (event.turn === undefined) continue
@@ -235,7 +238,7 @@ export class SessionPlaybackController implements SessionPlayback {
   play(sessionId: string, direction: PlaybackDirection = 1): void {
     const state = this.#requirePlayback(sessionId)
     const runtime = this.#runtime(sessionId)
-    const index = runtime.events.findIndex((event) => event.seq === state.cursorSeq)
+    const index = runtime.eventIndexBySeq.get(state.cursorSeq) ?? -1
     const current = runtime.events[index]
     const hasTarget = index >= 0 && (
       direction === -1 && current !== undefined && state.cursorTime > current.time
@@ -263,7 +266,8 @@ export class SessionPlaybackController implements SessionPlayback {
     assertSequence(seq)
     const state = this.#requirePlayback(sessionId)
     const runtime = this.#runtime(sessionId)
-    const target = runtime.events.find((event) => event.seq === seq)
+    const targetIndex = runtime.eventIndexBySeq.get(seq)
+    const target = targetIndex === undefined ? undefined : runtime.events[targetIndex]
     if (target === undefined) {
       throw new RangeError(
         `Sequence ${seq} is outside the loaded event window ${state.loadedBaseSeq}-${state.liveHeadSeq}`,
@@ -281,7 +285,7 @@ export class SessionPlaybackController implements SessionPlayback {
   step(sessionId: string, direction: PlaybackDirection): void {
     const state = this.#requirePlayback(sessionId)
     const runtime = this.#runtime(sessionId)
-    const index = runtime.events.findIndex((event) => event.seq === state.cursorSeq)
+    const index = runtime.eventIndexBySeq.get(state.cursorSeq) ?? -1
     const current = runtime.events[index]
     const next = direction === -1
       && current !== undefined
@@ -363,7 +367,7 @@ export class SessionPlaybackController implements SessionPlayback {
   getPosition(sessionId: string): PlaybackPosition {
     const state = this.#state(sessionId)
     const runtime = this.#runtime(sessionId)
-    const eventIndex = runtime.events.findIndex((event) => event.seq === state.cursorSeq)
+    const eventIndex = runtime.eventIndexBySeq.get(state.cursorSeq) ?? -1
     const event = runtime.events[eventIndex]
     if (event === undefined) {
       return {
@@ -490,7 +494,7 @@ export class SessionPlaybackController implements SessionPlayback {
 
     let budget = Math.max(0, now - runtime.frameTime) * state.rate
     runtime.frameTime = now
-    let index = runtime.events.findIndex((event) => event.seq === state.cursorSeq)
+    let index = runtime.eventIndexBySeq.get(state.cursorSeq) ?? -1
     let cursorSeq = state.cursorSeq
     let cursorTime = state.cursorTime
 
@@ -518,7 +522,7 @@ export class SessionPlaybackController implements SessionPlayback {
         runtime.segment = segment
       }
 
-      const targetIndex = runtime.events.findIndex((event) => event.seq === segment.targetSeq)
+      const targetIndex = runtime.eventIndexBySeq.get(segment.targetSeq) ?? -1
       const target = runtime.events[targetIndex]
       if (target === undefined) {
         runtime.segment = null

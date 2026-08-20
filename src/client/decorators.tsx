@@ -11,8 +11,9 @@ import type {
 import type { PlaybackState } from './playback-controller.js'
 import {
   playbackEventsOf,
-  projectConversationSnapshot,
+  projectConversationSnapshotAtCursor,
 } from './playback-projection.js'
+import { withConversationPlaybackClock } from './projection-clock.js'
 import { playbackController } from './runtime.js'
 import { bindProjectedSession } from './session-hook.js'
 import {
@@ -103,9 +104,17 @@ export function decorateChatView(Original: ComponentType<ChatViewSlotProps>) {
   return function PlaybackChatView(props: ChatViewSlotProps) {
     const playback = props.usePlayback((value) => value)
     const liveSnapshot = props.useSession((value) => value)
+    const projectedAtCursor = useMemo(
+      () => playback.mode === 'live'
+        ? liveSnapshot
+        : projectConversationSnapshotAtCursor(liveSnapshot, playback.cursorSeq),
+      [liveSnapshot, playback.mode, playback.cursorSeq],
+    )
     const projected = useMemo(
-      () => projectConversationSnapshot(liveSnapshot, playback),
-      [liveSnapshot, playback],
+      () => playback.mode === 'live'
+        ? liveSnapshot
+        : withConversationPlaybackClock(projectedAtCursor, playback.cursorTime),
+      [liveSnapshot, playback.mode, playback.cursorTime, projectedAtCursor],
     )
     const useProjectedSession = useMemo(
       () => bindProjectedSession(props.useSession, projected),
