@@ -67,5 +67,5 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-subprocess@0.1.0-rc.8'
   - '@deepseek-ai/dsh-token-meter@0.1.0-rc.8'
   - '@deepseek-ai/dsh-tool-todo@0.1.0-rc.8'
-  - dsh-harmony-react@0.2.4
-  - dsh-harmony@0.6.0
+  - dsh-harmony-react@0.2.4 || 0.3.0
+  - dsh-harmony@0.6.0 || 0.7.0 || 0.7.1

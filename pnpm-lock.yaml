@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       dsh-harmony-react:
-        specifier: ^0.2.4
-        version: 0.2.4(dsh-harmony@0.6.0(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2))
+        specifier: ^0.3.0
+        version: 0.3.0(dsh-harmony@0.7.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2))
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: ^4.0.1
@@ -40,8 +40,8 @@ importers:
         specifier: ~18.3.1
         version: 18.3.31
       dsh-harmony:
-        specifier: ^0.6.0
-        version: 0.6.0(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
+        specifier: ^0.7.1
+        version: 0.7.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -1043,14 +1043,14 @@ packages:
   defu@6.1.7:
     resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
 
-  dsh-harmony-react@0.2.4:
-    resolution: {integrity: sha512-OjxH//mGpsZ1UP3ovSAqR+AxvHwZKT6MKrcGF/kvk0idEN01Rko/zEgmzRS93LkXRAyMrlvYdAjoMutBT4h3Hg==}
+  dsh-harmony-react@0.3.0:
+    resolution: {integrity: sha512-UdoZF0xeGlullZIxr+P0fTu80dg851Tig+DvCrubp8quD4Uy291czFEmNUVCxYjOk7ABUDQuGmKeXRR90lQydQ==}
     engines: {node: ^22.22.3 || >=24.11.1}
     peerDependencies:
-      dsh-harmony: ^0.6.0
+      dsh-harmony: ^0.7.0
 
-  dsh-harmony@0.6.0:
-    resolution: {integrity: sha512-+NEBTql05OIetfs3ASnESzTlHubk1vwtD8CGVUXsZchgu34aLtHate61MYyZXiQMTuqlFRc/Wlt96iE2+bza5g==}
+  dsh-harmony@0.7.1:
+    resolution: {integrity: sha512-pCh0ZuNJT5mVNtuO8haMe48BulF8oAPCdZYP2JojBAdeHZviI9/Rc/56BUAWHtbyCupX6/VMFR7cC9lvghpZBQ==}
     engines: {node: ^22.22.3 || >=24.11.1}
     peerDependencies:
       '@deepseek-ai/dsh': 0.1.0-rc.8
@@ -2169,11 +2169,11 @@ snapshots:
 
   defu@6.1.7: {}
 
-  dsh-harmony-react@0.2.4(dsh-harmony@0.6.0(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)):
+  dsh-harmony-react@0.3.0(dsh-harmony@0.7.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)):
     dependencies:
-      dsh-harmony: 0.6.0(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
+      dsh-harmony: 0.7.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
 
-  dsh-harmony@0.6.0(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2):
+  dsh-harmony@0.7.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2):
     dependencies:
       '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
       '@phenomnomnominal/tsquery': 6.2.0(typescript@6.0.3)
