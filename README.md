@@ -33,8 +33,8 @@ pnpm check
 
 Every push to `main` and every pull request runs `pnpm check`. Publishing a
 GitHub Release whose tag matches `v<package.json version>` publishes the public
-package to npm with provenance. Add an npm automation token as the repository
-secret `NPM_TOKEN` before publishing the first release.
+package to npm through Trusted Publishing (OIDC), with automatic provenance and
+no npm token stored in GitHub.
 
 ## License
 
