@@ -68,7 +68,19 @@ test('live mode follows the live head', () => {
     hasMoreHistory: true,
     skipIdle: true,
     idleLimit: 1_000,
+    simulateTyping: false,
   })
+})
+
+test('simulated typing is an opt-in playback setting', () => {
+  const playback = new SessionPlaybackController()
+  playback.syncEvents('session', initialEvents, false)
+
+  assert.throws(() => playback.setSimulateTyping('session', true), /not in playback mode/)
+  playback.enter('session')
+  playback.setSimulateTyping('session', true)
+
+  assert.equal(playback.getState('session').simulateTyping, true)
 })
 
 test('historical playback remains fixed while live events arrive', () => {

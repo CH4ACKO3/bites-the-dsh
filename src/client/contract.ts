@@ -14,6 +14,7 @@ export type PlaybackLocaleKey =
   | 'stepForward'
   | 'rate'
   | 'skipIdle'
+  | 'simulateTyping'
   | 'idleLimit'
   | 'idleSeconds'
   | 'positionMode'

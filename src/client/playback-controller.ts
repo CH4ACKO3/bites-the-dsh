@@ -33,6 +33,7 @@ export interface PlaybackState {
   hasMoreHistory: boolean
   skipIdle: boolean
   idleLimit: PlaybackIdleLimit
+  simulateTyping: boolean
 }
 
 export interface PlaybackFrameClock {
@@ -50,6 +51,7 @@ export interface SessionPlayback {
   setRate(sessionId: string, rate: PlaybackRate): void
   setSkipIdle(sessionId: string, skipIdle: boolean): void
   setIdleLimit(sessionId: string, limit: PlaybackIdleLimit): void
+  setSimulateTyping(sessionId: string, simulateTyping: boolean): void
   getPosition(sessionId: string): PlaybackPosition
   seekEvent(sessionId: string, event: number): void
   seekTurn(sessionId: string, turn: number): void
@@ -97,6 +99,7 @@ function initialState(): PlaybackState {
     hasMoreHistory: false,
     skipIdle: true,
     idleLimit: 1_000,
+    simulateTyping: false,
   }
 }
 
@@ -298,6 +301,11 @@ export class SessionPlaybackController implements SessionPlayback {
     if (!isPlaybackIdleLimit(limit)) throw new RangeError(`Unsupported idle limit: ${limit}`)
     this.#runtime(sessionId).segment = null
     this.#update(sessionId, (state) => ({ ...state, idleLimit: limit }))
+  }
+
+  setSimulateTyping(sessionId: string, simulateTyping: boolean): void {
+    this.#requirePlayback(sessionId)
+    this.#update(sessionId, (state) => ({ ...state, simulateTyping }))
   }
 
   getPosition(sessionId: string): PlaybackPosition {
@@ -548,6 +556,7 @@ export class SessionPlaybackController implements SessionPlayback {
       && next.hasMoreHistory === current.hasMoreHistory
       && next.skipIdle === current.skipIdle
       && next.idleLimit === current.idleLimit
+      && next.simulateTyping === current.simulateTyping
     ) return
 
     this.#states.set(sessionId, next)

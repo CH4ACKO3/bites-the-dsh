@@ -4,10 +4,22 @@ import type {
   ChatViewSlotProps,
   ConversationSlotProps,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
-import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
-import { projectConversationSnapshot } from './playback-projection.js'
+import type {
+  ConversationSnapshot,
+  SessionId,
+} from '@deepseek-ai/dsh-client-runtime/client'
+import type { PlaybackState } from './playback-controller.js'
+import {
+  playbackEventsOf,
+  projectConversationSnapshot,
+} from './playback-projection.js'
 import { playbackController } from './runtime.js'
 import { bindProjectedSession } from './session-hook.js'
+import {
+  bindSimulatedInput,
+  type MaybeInputHook,
+  simulatedDraftAt,
+} from './simulated-input.js'
 
 type ConversationRootRuntimeProps = ConversationSlotProps & {
   sessionId: SessionId | undefined
@@ -16,7 +28,12 @@ type ConversationRootRuntimeProps = ConversationSlotProps & {
 const NO_SESSION_PLAYBACK_KEY = '__bites-the-dsh:no-session__'
 const HistoricalPlaybackContext = createContext(false)
 
-type InputBarRuntimeProps = Record<string, unknown> & { disabled?: boolean }
+type InputBarRuntimeProps = Record<string, unknown> & {
+  disabled?: boolean
+  useInput: MaybeInputHook
+  usePlayback: <Selected>(selector: (state: PlaybackState) => Selected) => Selected | undefined
+  useSession: <Selected>(selector: (state: ConversationSnapshot) => Selected) => Selected | undefined
+}
 
 type MessageIconActionsRuntimeProps = Record<string, unknown> & {
   onBranch?: () => void
@@ -51,7 +68,23 @@ export function decorateConversationRoot(Original: ComponentType<ConversationSlo
 export function decorateInputBar(Original: ComponentType<InputBarRuntimeProps>) {
   return function PlaybackInputBar(props: InputBarRuntimeProps) {
     const historical = useContext(HistoricalPlaybackContext)
-    return <Original {...props} disabled={historical || props.disabled} />
+    const playback = props.usePlayback((state) => state)
+    const entries = props.useSession((snapshot) => playbackEventsOf(snapshot).entries) ?? []
+    const simulatedDraft = historical && playback?.simulateTyping
+      ? simulatedDraftAt(entries, playback)
+      : undefined
+    const useInput = useMemo(
+      () => simulatedDraft === undefined
+        ? props.useInput
+        : bindSimulatedInput(props.useInput, simulatedDraft),
+      [props.useInput, simulatedDraft],
+    )
+
+    return <Original
+      {...props}
+      useInput={useInput}
+      disabled={historical || props.disabled}
+    />
   }
 }
 

@@ -210,6 +210,16 @@ export function PlaybackControls({ sessionId, usePlayback, playback, t }: Playba
       <button
         type="button"
         className="dsh-btd-idle"
+        data-active={state.simulateTyping}
+        aria-pressed={state.simulateTyping}
+        title={t('simulateTyping')}
+        onClick={() => playback.setSimulateTyping(sessionId, !state.simulateTyping)}
+      >
+        {t('simulateTyping')}
+      </button>
+      <button
+        type="button"
+        className="dsh-btd-idle"
         data-active={state.skipIdle}
         aria-pressed={state.skipIdle}
         title={t('skipIdle')}

@@ -12,6 +12,7 @@ The plugin turns the native conversation into a replay view without opening a se
 
 - Native session-header entry and compact playback controls.
 - Pause, forward play, reverse play, event stepping, speed selection, adjustable idle-gap compression, and direct event/turn/time seeking.
+- Optional simulated typing previews the next direct user message in the native read-only composer without touching its live draft.
 - A per-session observable controller exposed as `ctx.sessionPlayback` for time-only scripting.
 - Historical projection through DSH's native `ChatView`; the source session and live head continue independently.
 - Historical timelines expose `playbackClock: { kind: 'historical', time: cursorTime }` so projection consumers never treat an open historical turn as live wall-clock work.
