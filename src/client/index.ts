@@ -112,7 +112,10 @@ export function apply(ctx: ClientContext): void {
     id: 'session-playback',
     order: 100,
     locale: PLAYBACK_LOCALE_NAMESPACE,
-    inject: () => ({ playback }),
+    inject: () => ({
+      playback,
+      getLocale: () => ctx.locale.getLocale().active,
+    }),
   }, PlaybackControls))
 
   ctx.effect(installPlaybackStyles, 'bites-the-dsh: styles')

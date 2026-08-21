@@ -91,8 +91,11 @@ test('built client wires native replay, recovery UI, and stable historical proje
   let playback
   let sessionProvider
   let PlaybackControls
+  let controlsInjected
   let rawEventDefinition
   let rawEventView
+  let activeLocale = 'en'
+  let dictionaries
   const ctx = {
     conversationEvents: {
       register(definition) {
@@ -108,14 +111,15 @@ test('built client wires native replay, recovery UI, and stable historical proje
     },
     conversation: { blocks },
     locale: {
-      register: () => () => {},
-      bind: () => (key) => ({
-        enter: 'Replay session',
-        historical: 'Historical replay',
-        historyLoading: 'Loading earlier history',
-        historyLoadFailed: 'Earlier history failed to load',
-        retryOlderHistory: 'Retry loading earlier history',
-      })[key] ?? key,
+      register(_namespace, registered) {
+        dictionaries = registered
+        return () => {}
+      },
+      getLocale: () => ({ active: activeLocale }),
+      bind: () => (key, params = {}) => {
+        const template = dictionaries?.[activeLocale]?.[key] ?? key
+        return template.replace(/\{([^}]+)\}/g, (_match, name) => String(params[name]))
+      },
     },
     provide(_name, value) {
       playback = value
@@ -134,8 +138,9 @@ test('built client wires native replay, recovery UI, and stable historical proje
       inject(_name, register) {
         register()
       },
-      register(_options, component) {
+      register(options, component) {
         PlaybackControls = component
+        controlsInjected = options.inject()
         return () => {}
       },
     },
@@ -193,7 +198,7 @@ test('built client wires native replay, recovery UI, and stable historical proje
   const controlsElement = () => React.createElement(PlaybackControls, {
     sessionId: 'session',
     usePlayback,
-    playback,
+    ...controlsInjected,
     t,
   })
 
@@ -204,13 +209,31 @@ test('built client wires native replay, recovery UI, and stable historical proje
   await act(async () => {
     controls.root.findByType('button').props.onClick()
   })
-  assert.deepEqual(blocks.get('session'), { reason: 'readonly' })
+  assert.deepEqual(blocks.get('session'), { reason: 'Historical replay is read-only' })
 
   await act(async () => {
     controls.root.findByProps({ className: 'dsh-btd-positionMode' }).props.onChange({
       currentTarget: { value: 'time' },
     })
   })
+  const positionOutput = () => controls.root.findByProps({ className: 'dsh-btd-position' })
+  const dateOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }
+  assert.equal(textOf(positionOutput()), new Intl.DateTimeFormat('en', dateOptions).format(new Date(300)))
+  activeLocale = 'zh'
+  await act(async () => controls.update(controlsElement()))
+  assert.equal(textOf(positionOutput()), new Intl.DateTimeFormat('zh-CN', dateOptions).format(new Date(300)))
+  assert.equal(controls.root.findByProps({ className: 'dsh-btd-positionMode' }).props['aria-label'], '位置单位')
+  activeLocale = 'en'
+  await act(async () => controls.update(controlsElement()))
+
   const timeRange = () => controls.root.findByProps({ className: 'dsh-btd-positionRange' })
   await act(async () => {
     timeRange().props.onChange({ currentTarget: { valueAsNumber: 100 } })
@@ -240,7 +263,7 @@ test('built client wires native replay, recovery UI, and stable historical proje
   assert.equal(playback.getState('session').cursorSeq, 3)
 
   await act(async () => {
-    controls.root.findByProps({ title: 'reverse' }).props.onClick()
+    controls.root.findByProps({ title: 'Play backward' }).props.onClick()
     frame(0)
     frame(25)
   })
@@ -284,7 +307,7 @@ test('built client wires native replay, recovery UI, and stable historical proje
   assert.equal(FakeConversationNodeAssembler.constructions, initialConstructions)
 
   await act(async () => {
-    controls.root.findByProps({ title: 'exitReplay' }).props.onClick()
+    controls.root.findByProps({ title: 'Exit replay' }).props.onClick()
   })
   assert.equal(playback.getState('session').mode, 'live')
   assert.equal(blocks.get('session'), undefined)

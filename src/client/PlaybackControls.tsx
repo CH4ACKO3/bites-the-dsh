@@ -2,7 +2,8 @@ import type {
   PropsLocale,
   PropsRuntime,
 } from '@deepseek-ai/dsh-client-ui-slots'
-import { useEffect, useState } from 'react'
+import type { LocaleId } from '@deepseek-ai/dsh-client-locale/client'
+import { useEffect, useMemo, useState } from 'react'
 import {
   PLAYBACK_IDLE_LIMITS,
   PLAYBACK_RATES,
@@ -16,11 +17,14 @@ import { PLAYBACK_LOCALE_NAMESPACE } from './locales.js'
 
 type PlaybackControlsProps = PropsRuntime<'conversation.session.header.actions'>
   & PropsLocale<typeof PLAYBACK_LOCALE_NAMESPACE>
-  & { playback: SessionPlayback }
+  & {
+    playback: SessionPlayback
+    getLocale: () => LocaleId
+  }
 
 type PositionMode = 'event' | 'turn' | 'time'
 
-const worldTime = new Intl.DateTimeFormat(undefined, {
+const worldTimeOptions: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',
@@ -28,15 +32,17 @@ const worldTime = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
   second: '2-digit',
   hour12: false,
-})
+}
 
 function PositionControl({
   sessionId,
   playback,
   position,
   t,
+  locale,
 }: Pick<PlaybackControlsProps, 'sessionId' | 'playback' | 't'> & {
   position: PlaybackPosition
+  locale: LocaleId
 }) {
   const [mode, setMode] = useState<PositionMode>('event')
   const current = mode === 'event'
@@ -51,6 +57,10 @@ function PositionControl({
       ? position.turns
       : position.endTime
   const [draft, setDraft] = useState(current)
+  const worldTime = useMemo(
+    () => new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en', worldTimeOptions),
+    [locale],
+  )
 
   useEffect(() => setDraft(current), [current, mode])
 
@@ -160,7 +170,7 @@ function IconButton({
   </button>
 }
 
-export function PlaybackControls({ sessionId, usePlayback, playback, t }: PlaybackControlsProps) {
+export function PlaybackControls({ sessionId, usePlayback, playback, getLocale, t }: PlaybackControlsProps) {
   const state = usePlayback((value) => value)
   if (state.liveHeadSeq === 0) return null
 
@@ -223,7 +233,7 @@ export function PlaybackControls({ sessionId, usePlayback, playback, t }: Playba
               </span>
             </>}
       </span>
-      <PositionControl sessionId={sessionId} playback={playback} position={position} t={t} />
+      <PositionControl sessionId={sessionId} playback={playback} position={position} locale={getLocale()} t={t} />
       <span className="dsh-btd-divider" aria-hidden="true" />
       <IconButton label={t(retryOlderHistory ? 'retryOlderHistory' : 'stepBack')} kind="step-back" disabled={backwardDisabled} onClick={() => runBackward(() => playback.step(sessionId, -1))} />
       <IconButton label={t(retryOlderHistory ? 'retryOlderHistory' : 'reverse')} kind="reverse" active={state.mode === 'playing' && state.direction === -1} pressed={state.mode === 'playing' && state.direction === -1} disabled={backwardDisabled} onClick={() => runBackward(() => togglePlay(-1))} />

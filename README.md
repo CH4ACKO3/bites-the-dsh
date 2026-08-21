@@ -1,5 +1,7 @@
 # Bites the DSH
 
+English | [简体中文](README.zh-CN.md)
+
 Read-only, scriptable session playback for the DeepSeek Harness WebUI.
 
 https://github.com/user-attachments/assets/3c9dfdcf-a454-4750-9edf-76771ed5a9a6

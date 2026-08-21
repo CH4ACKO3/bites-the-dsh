@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — 2026-08-21
+
+- Make time seeking logarithmic and extend the built-client smoke test across raw events, slider boundaries, reverse playback, and replay exit.
+- Add complete English and Simplified Chinese repository documentation.
+- Format replay timestamps with the active DSH locale and cover live language switching.
+- Publish GitHub Releases and npm packages automatically from version tags.
+
 ## 0.2.0 — 2026-08-21
 
 - Add optional simulated typing in the native read-only composer.
