@@ -266,6 +266,26 @@ test('manual time seeking honors both endpoints and the nearest backward event',
   assert.equal(playback.getState('session').cursorTime, 100)
 })
 
+test('time seeking uses logarithmic event lookup', () => {
+  let timeReads = 0
+  const events = Array.from({ length: 100_000 }, (_, index) => ({
+    seq: index + 1,
+    get time() {
+      timeReads += 1
+      return index
+    },
+  }))
+  const playback = new SessionPlaybackController(new FakeFrameClock())
+  playback.syncEvents('session', events, false)
+  playback.enter('session')
+
+  timeReads = 0
+  playback.seekTime('session', 50_000.5)
+
+  assert.equal(playback.getState('session').cursorSeq, 50_001)
+  assert.ok(timeReads < 32, `expected logarithmic lookup, read time ${timeReads} times`)
+})
+
 test('reverse playback hides an event as the frame clock leaves its timestamp', () => {
   const clock = new FakeFrameClock()
   const playback = new SessionPlaybackController(clock)

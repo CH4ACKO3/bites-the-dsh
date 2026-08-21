@@ -41,9 +41,15 @@ class FakeConversationNodeAssembler {
 
 async function loadClientBundle() {
   let client
+  let nextFrameId = 1
+  const frameCallbacks = new Map()
   globalThis.window = {
-    requestAnimationFrame: () => 1,
-    cancelAnimationFrame: () => {},
+    requestAnimationFrame(callback) {
+      const id = nextFrameId++
+      frameCallbacks.set(id, callback)
+      return id
+    },
+    cancelAnimationFrame: (id) => frameCallbacks.delete(id),
     __ModuleLoader__: {
       load({ factory }) {
         client = factory((id) => {
@@ -63,7 +69,14 @@ async function loadClientBundle() {
     head: { appendChild() {} },
   }
   await import(`../lib/client.js?integration=${Date.now()}`)
-  return client
+  return {
+    client,
+    frame(now) {
+      const callbacks = [...frameCallbacks.values()]
+      frameCallbacks.clear()
+      for (const callback of callbacks) callback(now)
+    },
+  }
 }
 
 function textOf(node) {
@@ -72,15 +85,27 @@ function textOf(node) {
 }
 
 test('built client wires native replay, recovery UI, and stable historical projection', async () => {
-  const client = await loadClientBundle()
+  const { client, frame } = await loadClientBundle()
   const effects = []
   const blocks = new Map()
   let playback
   let sessionProvider
   let PlaybackControls
+  let rawEventDefinition
+  let rawEventView
   const ctx = {
-    conversationEvents: { register: () => () => {} },
-    conversationViews: { register: () => () => {} },
+    conversationEvents: {
+      register(definition) {
+        rawEventDefinition = definition
+        return () => {}
+      },
+    },
+    conversationViews: {
+      register(definition) {
+        rawEventView = definition
+        return () => {}
+      },
+    },
     conversation: { blocks },
     locale: {
       register: () => () => {},
@@ -118,11 +143,23 @@ test('built client wires native replay, recovery UI, and stable historical proje
   client.apply(ctx)
 
   let historyAttempts = 0
-  const rawEntries = [
+  const sourceEntries = [
     { event: { seq: 1, time: 100, type: 'turn/start', data: { turn: 1 } }, view: {}, location: { kind: 'turn', turn: { turn: 1 } } },
     { event: { seq: 2, time: 200, type: 'assistant/message', data: {} }, view: {}, location: { kind: 'turn', turn: { turn: 1 } } },
     { event: { seq: 3, time: 300, type: 'turn/end', data: { turn: 1 } }, view: {}, location: { kind: 'turn', turn: { turn: 1 } } },
   ]
+  const rawNodes = sourceEntries.map((entry) => {
+    const matched = rawEventDefinition.match(entry)
+    const state = rawEventDefinition.start({}, { ...entry, ...matched })
+    return rawEventDefinition.buildViewNode({
+      state,
+      key: `raw:${entry.event.seq}`,
+      kind: rawEventDefinition.kind,
+      id: matched.id,
+    })
+  })
+  const rawEntries = rawEventView.create().replace({ nodes: rawNodes }).entries
+  assert.deepEqual(rawEntries.map(({ event }) => event.seq), [1, 2, 3])
   const baseChat = {
     timeline: { turnOrder: [], turns: new Map() },
     legacy: { nodes: [], turnTimings: new Map(), turnEnds: new Map(), partial: false, runningCalls: new Map() },
@@ -170,9 +207,17 @@ test('built client wires native replay, recovery UI, and stable historical proje
   assert.deepEqual(blocks.get('session'), { reason: 'readonly' })
 
   await act(async () => {
-    playback.seekEvent('session', 1)
+    controls.root.findByProps({ className: 'dsh-btd-positionMode' }).props.onChange({
+      currentTarget: { value: 'time' },
+    })
+  })
+  const timeRange = () => controls.root.findByProps({ className: 'dsh-btd-positionRange' })
+  await act(async () => {
+    timeRange().props.onChange({ currentTarget: { valueAsNumber: 100 } })
     await Promise.resolve()
   })
+  assert.equal(playback.getState('session').cursorTime, 100)
+  assert.equal(playback.getState('session').cursorSeq, 1)
   const failedStatus = controls.root.findByProps({ 'data-history-status': 'failed' })
   assert.match(textOf(failedStatus), /failed/i)
   assert.equal(historyAttempts, 1)
@@ -181,6 +226,29 @@ test('built client wires native replay, recovery UI, and stable historical proje
     await Promise.resolve()
   })
   assert.equal(historyAttempts, 2)
+
+  await act(async () => {
+    timeRange().props.onChange({ currentTarget: { valueAsNumber: 200 } })
+  })
+  assert.equal(playback.getState('session').cursorTime, 200)
+  assert.equal(playback.getState('session').cursorSeq, 2)
+
+  await act(async () => {
+    timeRange().props.onChange({ currentTarget: { valueAsNumber: 300 } })
+  })
+  assert.equal(playback.getState('session').cursorTime, 300)
+  assert.equal(playback.getState('session').cursorSeq, 3)
+
+  await act(async () => {
+    controls.root.findByProps({ title: 'reverse' }).props.onClick()
+    frame(0)
+    frame(25)
+  })
+  assert.equal(playback.getState('session').mode, 'playing')
+  assert.equal(playback.getState('session').direction, -1)
+  assert.equal(playback.getState('session').cursorTime, 275)
+  assert.equal(playback.getState('session').cursorSeq, 2)
+  await act(async () => playback.pause('session'))
 
   function ProjectedProbe(props) {
     const value = props.useSession((value) => ({
@@ -198,7 +266,7 @@ test('built client wires native replay, recovery UI, and stable historical proje
   })
   const initialConstructions = FakeConversationNodeAssembler.constructions
   await act(async () => {
-    playback.seekTime('session', 150)
+    playback.seekTime('session', 250)
   })
   assert.equal(FakeConversationNodeAssembler.constructions, initialConstructions)
 
@@ -216,8 +284,9 @@ test('built client wires native replay, recovery UI, and stable historical proje
   assert.equal(FakeConversationNodeAssembler.constructions, initialConstructions)
 
   await act(async () => {
-    playback.exit('session')
+    controls.root.findByProps({ title: 'exitReplay' }).props.onClick()
   })
+  assert.equal(playback.getState('session').mode, 'live')
   assert.equal(blocks.get('session'), undefined)
   for (const cleanup of effects.reverse()) cleanup()
   controls.unmount()

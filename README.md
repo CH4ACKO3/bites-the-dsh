@@ -46,6 +46,9 @@ playback.pause(sessionId)
 playback.exit(sessionId)
 ```
 
+Time values such as the argument to `seekTime` use Unix epoch milliseconds,
+matching JavaScript `Date` values and recorded event timestamps.
+
 The service also supports event and turn seeking, reverse playback, rate and
 idle-gap settings, subscriptions, and position reads. It deliberately exposes
 no operation that mutates the source session.

@@ -425,11 +425,15 @@ export class SessionPlaybackController implements SessionPlayback {
       )
     }
 
-    let target = runtime.events[0]
-    if (target === undefined) throw new RangeError('Time position is outside an empty event window')
-    for (const event of runtime.events) {
-      if (event.time <= time) target = event
+    let lower = 0
+    let upper = runtime.events.length
+    while (lower < upper) {
+      const middle = Math.floor((lower + upper) / 2)
+      if (runtime.events[middle]!.time <= time) lower = middle + 1
+      else upper = middle
     }
+    const target = runtime.events[lower - 1]
+    if (target === undefined) throw new RangeError('Time position is outside an empty event window')
     this.#cancelFrame(sessionId)
     this.#update(sessionId, (state) => ({
       ...state,
