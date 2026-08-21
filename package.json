@@ -1,6 +1,6 @@
 {
   "name": "@ch4acko3/bites-the-dsh",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read-only, scriptable session playback for the DeepSeek Harness WebUI",
   "type": "module",
   "main": "./lib/index.js",

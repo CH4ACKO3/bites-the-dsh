@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/CH4ACKO3/bites-the-dsh/compare/v0.2.0...v0.2.1) (2026-08-21)
+
+
+### Performance Improvements
+
+* harden playback navigation ([b605376](https://github.com/CH4ACKO3/bites-the-dsh/commit/b605376b2e93ecffc7e4a98fa608153c497ce3c4))
+
 ## 0.2.0 — 2026-08-21
 
 - Add optional simulated typing in the native read-only composer.
