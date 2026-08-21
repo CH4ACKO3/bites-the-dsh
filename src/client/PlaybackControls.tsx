@@ -135,12 +135,14 @@ function IconButton({
   label,
   kind,
   active = false,
+  pressed,
   disabled = false,
   onClick,
 }: {
   label: string
   kind: Parameters<typeof PlaybackIcon>[0]['kind']
   active?: boolean
+  pressed?: boolean
   disabled?: boolean
   onClick: () => void
 }) {
@@ -151,6 +153,7 @@ function IconButton({
     title={label}
     disabled={disabled}
     data-active={active}
+    aria-pressed={pressed}
     onClick={onClick}
   >
     <PlaybackIcon kind={kind} />
@@ -179,6 +182,7 @@ export function PlaybackControls({ sessionId, usePlayback, playback, t }: Playba
   const atHead = state.cursorSeq >= state.liveHeadSeq
     && state.cursorTime >= position.endTime
   const retryOlderHistory = atBase && state.historyLoadStatus === 'failed'
+  const historyStatus = atBase ? state.historyLoadStatus : 'idle'
   const backwardDisabled = atBase && !retryOlderHistory
   const runBackward = (action: () => void) => {
     if (retryOlderHistory) void playback.retryOlderHistory(sessionId)
@@ -192,19 +196,39 @@ export function PlaybackControls({ sessionId, usePlayback, playback, t }: Playba
   return <span className="dsh-btd-toolbarGroup" data-session-playback-controls="">
     <div
       className="dsh-btd-controls"
-      role="toolbar"
+      role="group"
       aria-label={t('historical')}
     >
-      <span className="dsh-btd-status" title={t('readonly')}>
-        <span className="dsh-btd-statusDot" aria-hidden="true" />
-        <span className="dsh-btd-statusLabel">{t('historical')}</span>
+      <span
+        className="dsh-btd-status"
+        data-history-status={historyStatus}
+        role="status"
+        aria-live="polite"
+        title={historyStatus === 'idle' ? t('readonly') : undefined}
+      >
+        {historyStatus === 'failed'
+          ? <button
+              type="button"
+              className="dsh-btd-statusRetry"
+              title={t('retryOlderHistory')}
+              onClick={() => { void playback.retryOlderHistory(sessionId) }}
+            >
+              <span className="dsh-btd-statusDot" aria-hidden="true" />
+              <span className="dsh-btd-statusLabel">{t('historyLoadFailed')}</span>
+            </button>
+          : <>
+              <span className="dsh-btd-statusDot" aria-hidden="true" />
+              <span className="dsh-btd-statusLabel">
+                {t(historyStatus === 'loading' ? 'historyLoading' : 'historical')}
+              </span>
+            </>}
       </span>
       <PositionControl sessionId={sessionId} playback={playback} position={position} t={t} />
       <span className="dsh-btd-divider" aria-hidden="true" />
       <IconButton label={t(retryOlderHistory ? 'retryOlderHistory' : 'stepBack')} kind="step-back" disabled={backwardDisabled} onClick={() => runBackward(() => playback.step(sessionId, -1))} />
-      <IconButton label={t(retryOlderHistory ? 'retryOlderHistory' : 'reverse')} kind="reverse" active={state.mode === 'playing' && state.direction === -1} disabled={backwardDisabled} onClick={() => runBackward(() => togglePlay(-1))} />
+      <IconButton label={t(retryOlderHistory ? 'retryOlderHistory' : 'reverse')} kind="reverse" active={state.mode === 'playing' && state.direction === -1} pressed={state.mode === 'playing' && state.direction === -1} disabled={backwardDisabled} onClick={() => runBackward(() => togglePlay(-1))} />
       <IconButton label={t('pause')} kind="pause" disabled={state.mode !== 'playing'} onClick={() => playback.pause(sessionId)} />
-      <IconButton label={t('forward')} kind="forward" active={state.mode === 'playing' && state.direction === 1} disabled={atHead} onClick={() => togglePlay(1)} />
+      <IconButton label={t('forward')} kind="forward" active={state.mode === 'playing' && state.direction === 1} pressed={state.mode === 'playing' && state.direction === 1} disabled={atHead} onClick={() => togglePlay(1)} />
       <IconButton label={t('stepForward')} kind="step-forward" disabled={atHead} onClick={() => playback.step(sessionId, 1)} />
       <span className="dsh-btd-divider" aria-hidden="true" />
       <select

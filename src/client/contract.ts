@@ -13,6 +13,8 @@ export type PlaybackLocaleKey =
   | 'forward'
   | 'stepForward'
   | 'retryOlderHistory'
+  | 'historyLoading'
+  | 'historyLoadFailed'
   | 'rate'
   | 'skipIdle'
   | 'simulateTyping'

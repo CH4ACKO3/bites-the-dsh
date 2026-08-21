@@ -22,3 +22,4 @@ jobs:
           node-version: 24.11.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - run: pnpm pack --dry-run

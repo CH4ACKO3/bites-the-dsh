@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react'
-import { createContext, useContext, useMemo, useSyncExternalStore } from 'react'
+import { createContext, useContext, useMemo, useRef, useSyncExternalStore } from 'react'
 import type {
   ChatViewSlotProps,
   ConversationSlotProps,
@@ -19,7 +19,8 @@ import { bindProjectedSession } from './session-hook.js'
 import {
   bindSimulatedInput,
   type MaybeInputHook,
-  simulatedDraftAt,
+  simulatedDraftAtTime,
+  simulatedInputPreview,
 } from './simulated-input.js'
 
 type ConversationRootRuntimeProps = ConversationSlotProps & {
@@ -71,8 +72,14 @@ export function decorateInputBar(Original: ComponentType<InputBarRuntimeProps>) 
     const historical = useContext(HistoricalPlaybackContext)
     const playback = props.usePlayback((state) => state)
     const entries = props.useSession((snapshot) => playbackEventsOf(snapshot).entries) ?? []
+    const simulatedPreview = useMemo(
+      () => historical && playback?.simulateTyping
+        ? simulatedInputPreview(entries, playback)
+        : undefined,
+      [entries, historical, playback?.cursorSeq, playback?.simulateTyping, playback?.skipIdle],
+    )
     const simulatedDraft = historical && playback?.simulateTyping
-      ? simulatedDraftAt(entries, playback)
+      ? simulatedDraftAtTime(simulatedPreview, playback.cursorTime)
       : undefined
     const useInput = useMemo(
       () => simulatedDraft === undefined
@@ -104,10 +111,56 @@ export function decorateChatView(Original: ComponentType<ChatViewSlotProps>) {
   return function PlaybackChatView(props: ChatViewSlotProps) {
     const playback = props.usePlayback((value) => value)
     const liveSnapshot = props.useSession((value) => value)
+    const projectionCache = useRef<{
+      cursorSeq: number
+      hasMore: boolean
+      count: number
+      firstSeq: number | undefined
+      firstTime: number | undefined
+      lastSeq: number | undefined
+      lastTime: number | undefined
+      snapshot: ConversationSnapshot
+    } | undefined>(undefined)
     const projectedAtCursor = useMemo(
-      () => playback.mode === 'live'
-        ? liveSnapshot
-        : projectConversationSnapshotAtCursor(liveSnapshot, playback.cursorSeq),
+      () => {
+        if (playback.mode === 'live') {
+          projectionCache.current = undefined
+          return liveSnapshot
+        }
+        const entries = playbackEventsOf(liveSnapshot).entries
+        let lower = 0
+        let upper = entries.length
+        while (lower < upper) {
+          const middle = Math.floor((lower + upper) / 2)
+          if (entries[middle]!.event.seq <= playback.cursorSeq) lower = middle + 1
+          else upper = middle
+        }
+        const first = entries[0]?.event
+        const last = entries[lower - 1]?.event
+        const cached = projectionCache.current
+        if (
+          cached?.cursorSeq === playback.cursorSeq
+          && cached.hasMore === liveSnapshot.hasMore
+          && cached.count === lower
+          && cached.firstSeq === first?.seq
+          && cached.firstTime === first?.time
+          && cached.lastSeq === last?.seq
+          && cached.lastTime === last?.time
+        ) return cached.snapshot
+
+        const snapshot = projectConversationSnapshotAtCursor(liveSnapshot, playback.cursorSeq)
+        projectionCache.current = {
+          cursorSeq: playback.cursorSeq,
+          hasMore: liveSnapshot.hasMore,
+          count: lower,
+          firstSeq: first?.seq,
+          firstTime: first?.time,
+          lastSeq: last?.seq,
+          lastTime: last?.time,
+          snapshot,
+        }
+        return snapshot
+      },
       [liveSnapshot, playback.mode, playback.cursorSeq],
     )
     const projected = useMemo(

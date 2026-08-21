@@ -62,6 +62,7 @@ const styles = `
   align-items: center;
   gap: 8px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .dsh-btd-toolbarSeparator {
@@ -77,6 +78,31 @@ const styles = `
   gap: 6px;
   margin-right: 3px;
   white-space: nowrap;
+}
+
+.dsh-btd-statusRetry {
+  min-width: 0;
+  height: 24px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dsw-alias-state-warn-primary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+}
+
+.dsh-btd-statusRetry:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.dsh-btd-statusRetry:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
 }
 
 .dsh-btd-statusDot,
@@ -128,7 +154,7 @@ const styles = `
 
 .dsh-btd-positionRange {
   width: 72px;
-  height: 18px;
+  height: 24px;
   margin: 0;
   padding: 0;
   appearance: none;
@@ -143,9 +169,9 @@ const styles = `
 }
 
 .dsh-btd-positionRange::-webkit-slider-thumb {
-  width: 10px;
-  height: 10px;
-  margin-top: -4px;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
   border: 0;
   border-radius: 50%;
   appearance: none;
@@ -159,8 +185,8 @@ const styles = `
 }
 
 .dsh-btd-positionRange::-moz-range-thumb {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border: 0;
   border-radius: 50%;
   background: var(--dsw-alias-state-business-primary);
@@ -240,7 +266,7 @@ const styles = `
 }
 
 @media (max-width: 760px) {
-  .dsh-btd-statusLabel {
+  .dsh-btd-status[data-history-status='idle'] .dsh-btd-statusLabel {
     display: none;
   }
 
@@ -259,6 +285,7 @@ const styles = `
 
 @media (max-width: 960px) {
   .dsh-btd-controls {
+    width: 100%;
     max-width: max(230px, calc(100vw - 526px));
     overflow-x: auto;
     overflow-y: hidden;
@@ -279,8 +306,44 @@ const styles = `
     background: var(--dsw-alias-bg-layer-1);
   }
 
-  .dsh-btd-statusLabel {
+  .dsh-btd-status[data-history-status='idle'] .dsh-btd-statusLabel {
     display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .dsh-btd-controls {
+    height: 48px;
+  }
+
+  .dsh-btd-enter,
+  .dsh-btd-iconButton,
+  .dsh-btd-live,
+  .dsh-btd-idle,
+  .dsh-btd-rate,
+  .dsh-btd-positionMode,
+  .dsh-btd-idleDuration,
+  .dsh-btd-statusRetry {
+    min-height: 44px;
+  }
+
+  .dsh-btd-iconButton {
+    width: 44px;
+  }
+
+  .dsh-btd-positionRange {
+    height: 44px;
+  }
+
+  .dsh-btd-positionRange::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+    margin-top: -8px;
+  }
+
+  .dsh-btd-positionRange::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
   }
 }
 `

@@ -21,6 +21,35 @@ The plugin turns the native conversation into a replay view without opening a se
 
 The current compatibility target is DSH `0.1.0-rc.8`. Harmony selector drift fails the automated test instead of silently changing the wrong component.
 
+## Install
+
+```sh
+dsh plugin --profile web add @ch4acko3/bites-the-dsh
+dsh harmony status --profile web
+```
+
+All four Bites the DSH patches should report `bound`. Reload the WebUI, open a
+session, then use **Replay session** in the native session header.
+
+## Script control
+
+Other DSH plugins can use the same per-session clock through the provided
+Cordis service:
+
+```ts
+const playback = ctx.sessionPlayback
+
+playback.enter(sessionId)
+playback.seekTime(sessionId, Date.parse('2026-08-20T12:00:00Z'))
+playback.play(sessionId, 1)
+playback.pause(sessionId)
+playback.exit(sessionId)
+```
+
+The service also supports event and turn seeking, reverse playback, rate and
+idle-gap settings, subscriptions, and position reads. It deliberately exposes
+no operation that mutates the source session.
+
 ## Development
 
 Requires Node.js `^22.22.3 || >=24.11.1` and pnpm 11.
@@ -32,7 +61,8 @@ pnpm check
 
 ## CI/CD
 
-Every push to `main` and every pull request runs `pnpm check`. Publishing a
+Every push to `main` and every pull request runs `pnpm check` and verifies the
+npm package contents. Publishing a
 GitHub Release whose tag matches `v<package.json version>` publishes the public
 package to npm through Trusted Publishing (OIDC), with automatic provenance and
 no npm token stored in GitHub.

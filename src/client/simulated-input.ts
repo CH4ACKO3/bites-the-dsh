@@ -22,6 +22,12 @@ export type MaybeInputHook = <Selected>(
   equal?: (left: Selected, right: Selected) => boolean,
 ) => Selected | undefined
 
+export interface SimulatedInputPreview {
+  readonly graphemes: readonly string[]
+  readonly startTime: number
+  readonly endTime: number
+}
+
 function userText(entry: PlaybackEntry): string | undefined {
   const { event } = entry
   if (event.type !== 'user/message' || event.data.source.kind !== 'user') return undefined
@@ -50,29 +56,54 @@ function typingStart(
   return Math.min(entries[anchorIndex]?.event.time ?? targetTime - duration, targetTime)
 }
 
-export function simulatedDraftAt(
+export function simulatedInputPreview(
   entries: readonly PlaybackEntry[],
-  playback: Pick<PlaybackState, 'cursorSeq' | 'cursorTime' | 'skipIdle'>,
-): string {
-  const targetIndex = entries.findIndex((entry) => (
-    entry.event.seq > playback.cursorSeq && userText(entry) !== undefined
-  ))
-  if (targetIndex < 0) return ''
+  playback: Pick<PlaybackState, 'cursorSeq' | 'skipIdle'>,
+): SimulatedInputPreview | undefined {
+  let lower = 0
+  let upper = entries.length
+  while (lower < upper) {
+    const middle = Math.floor((lower + upper) / 2)
+    if (entries[middle]!.event.seq <= playback.cursorSeq) lower = middle + 1
+    else upper = middle
+  }
+  let targetIndex = lower
+  while (targetIndex < entries.length && userText(entries[targetIndex]!) === undefined) {
+    targetIndex += 1
+  }
+  if (targetIndex >= entries.length) return undefined
 
   const target = entries[targetIndex]!
   const text = userText(target)!
   const graphemes = [...graphemeSegmenter.segment(text)].map(({ segment }) => segment)
-  const start = typingStart(
-    entries,
-    targetIndex,
-    target.event.time,
-    typingDuration(graphemes.length),
-    playback.skipIdle,
-  )
-  if (playback.cursorTime <= start || playback.cursorTime >= target.event.time) return ''
+  return {
+    graphemes,
+    startTime: typingStart(
+      entries,
+      targetIndex,
+      target.event.time,
+      typingDuration(graphemes.length),
+      playback.skipIdle,
+    ),
+    endTime: target.event.time,
+  }
+}
 
-  const progress = (playback.cursorTime - start) / (target.event.time - start)
-  return graphemes.slice(0, Math.ceil(graphemes.length * progress)).join('')
+export function simulatedDraftAtTime(
+  preview: SimulatedInputPreview | undefined,
+  cursorTime: number,
+): string {
+  if (preview === undefined || cursorTime <= preview.startTime || cursorTime >= preview.endTime) return ''
+
+  const progress = (cursorTime - preview.startTime) / (preview.endTime - preview.startTime)
+  return preview.graphemes.slice(0, Math.ceil(preview.graphemes.length * progress)).join('')
+}
+
+export function simulatedDraftAt(
+  entries: readonly PlaybackEntry[],
+  playback: Pick<PlaybackState, 'cursorSeq' | 'cursorTime' | 'skipIdle'>,
+): string {
+  return simulatedDraftAtTime(simulatedInputPreview(entries, playback), playback.cursorTime)
 }
 
 export function bindSimulatedInput(useInput: MaybeInputHook, draft: string): MaybeInputHook {

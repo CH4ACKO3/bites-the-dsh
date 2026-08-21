@@ -38,7 +38,7 @@ Replay runs in the DSH WebUI against the currently visible session. Live events 
 
 ## Brand Commitments
 
-The product name is Bites the Dust. UI additions inherit the native DSH visual system and terminology rather than creating a separate panel or visual identity.
+The product name is Bites the DSH, with the localized Chinese display name 败者食尘. UI additions inherit the native DSH visual system and terminology rather than creating a separate panel or visual identity.
 
 ## Evidence on Hand
 
@@ -51,4 +51,3 @@ The installed DSH `0.1.0-rc.8` runtime publicly exposes raw conversation event d
 - Extend the native conversation instead of adding a parallel surface.
 - Prefer public DSH extension points; use Harmony only at the missing read-projection boundary.
 - Ship each layer working end to end before adding richer timeline behavior.
-
