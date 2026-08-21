@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.11.1
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - name: Verify release tag
+        run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./package.json').version")"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "GitHub Release $GITHUB_REF_NAME already exists"
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "Bites the DSH $GITHUB_REF_NAME"
+          fi
+      - run: npm publish --access public

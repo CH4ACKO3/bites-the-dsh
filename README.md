@@ -65,9 +65,8 @@ pnpm check
 ## CI/CD
 
 Every push to `main` and every pull request runs `pnpm check` and verifies the
-npm package contents. Conventional commits on `main` are collected into a
-Release Please PR. Merging that PR updates the package version and changelog,
-creates the version tag and GitHub Release, then publishes the public package
+npm package contents. Pushing a `v<package.json version>` tag runs the same
+checks, creates the matching GitHub Release, and publishes the public package
 to npm through Trusted Publishing (OIDC), with automatic provenance and no npm
 token stored in GitHub.
 
