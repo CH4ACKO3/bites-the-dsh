@@ -9,6 +9,8 @@ const target = {
 module.exports = [
   component({
     id: 'readonly-conversation-root',
+    description:
+      'Marks the native conversation as replaying and blocks session-mutating controls during historical playback.',
     target,
     select: { name: 'ConversationRoot' },
     expect: 1,
@@ -22,6 +24,8 @@ module.exports = [
   }),
   component({
     id: 'historical-chat-projection',
+    description:
+      'Projects the native conversation at the replay cursor without mutating the live session.',
     target,
     select: { name: 'ChatView' },
     expect: 1,
@@ -35,6 +39,8 @@ module.exports = [
   }),
   component({
     id: 'readonly-native-input',
+    description:
+      'Keeps the native composer read-only during replay and optionally previews simulated user typing.',
     target,
     select: { name: 'InputBar' },
     expect: 1,
@@ -48,6 +54,8 @@ module.exports = [
   }),
   component({
     id: 'readonly-native-message-actions',
+    description:
+      'Disables native message actions that would mutate the session during historical playback.',
     target,
     select: { name: 'MessageIconActions' },
     expect: 1,

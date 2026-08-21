@@ -15,6 +15,15 @@ test('Harmony patches do not impose a semantic order on Turn Fold', () => {
   assert.equal(manifest.dsh.harmony.after, undefined)
 })
 
+test('Harmony patches expose human-readable descriptions', () => {
+  const patches = workspaceRequire('../patches/conversation.patch.cjs')
+
+  for (const patch of patches) {
+    assert.equal(typeof patch.description, 'string', `${patch.id} has no description`)
+    assert.notEqual(patch.description.trim(), '', `${patch.id} has an empty description`)
+  }
+})
+
 test('Harmony component patches each match the rc.8 conversation bundle exactly once', () => {
   const patches = workspaceRequire('../patches/conversation.patch.cjs')
   const packageJson = workspaceRequire.resolve('@deepseek-ai/dsh-client-ui-conversation/package.json')
