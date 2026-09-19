@@ -24,13 +24,15 @@ test('Harmony patches expose human-readable descriptions', () => {
   }
 })
 
-test('Harmony component patches each match the rc.8 conversation bundle exactly once', () => {
+test('Harmony component patches each match their native Conversation/Chat bundle exactly once', () => {
   const patches = workspaceRequire('../patches/conversation.patch.cjs')
-  const packageJson = workspaceRequire.resolve('@deepseek-ai/dsh-client-ui-conversation/package.json')
-  const filename = join(dirname(packageJson), 'lib/client.js')
-  let source = readFileSync(filename, 'utf8')
+  const resolver = process.env.DSH_BITES_UPSTREAM_ROOT
+    ? createRequire(join(process.env.DSH_BITES_UPSTREAM_ROOT, 'probe.cjs')) : workspaceRequire
+  const sources = new Map()
 
   for (const patch of patches) {
+    const filename = join(dirname(resolver.resolve(`${patch.target.package}/package.json`)), patch.target.file)
+    let source = sources.get(filename) ?? readFileSync(filename, 'utf8')
     const sourceFile = tsquery.ast(source, filename)
     const nodes = tsquery(sourceFile, patch.select)
     assert.equal(nodes.length, patch.expect, `${patch.id} selector drifted`)
@@ -47,7 +49,10 @@ test('Harmony component patches each match the rc.8 conversation bundle exactly 
       })
     }
     source = edit.toString()
+    sources.set(filename, source)
   }
+
+  const source = [...sources.values()].join('\n')
 
   assert.match(source, /decorateConversationRoot/)
   assert.match(source, /decorateChatView/)

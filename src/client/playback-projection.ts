@@ -1,10 +1,11 @@
 import {
   ConversationNodeAssembler,
-  type ChatSnapshot,
-  type ClientContext,
-  type ConversationRuntime,
-  type ConversationSnapshot,
-} from '@deepseek-ai/dsh-client-runtime/client'
+  type UiConversation,
+  type ConversationSnapshot as NativeConversationSnapshot,
+} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client'
+import type { PlaybackSnapshot as ConversationSnapshot } from './playback-snapshot.js'
 import type { PlaybackState } from './playback-controller.js'
 import { withConversationPlaybackClock } from './projection-clock.js'
 import {
@@ -13,16 +14,16 @@ import {
   type PlaybackEventSnapshot,
 } from './raw-events.js'
 
-let conversationRuntime: ConversationRuntime | undefined
+let conversationRuntime: Pick<UiConversation, 'events' | 'views'> | undefined
 
 export function configurePlaybackProjection(ctx: ClientContext): void {
   conversationRuntime = {
-    events: ctx.conversationEvents,
-    views: ctx.conversationViews,
+    events: ctx.uiConversation.events,
+    views: ctx.uiConversation.views,
   }
 }
 
-export function playbackEventsOf(snapshot: ConversationSnapshot): PlaybackEventSnapshot {
+export function playbackEventsOf(snapshot: NativeConversationSnapshot): PlaybackEventSnapshot {
   const views = snapshot.views as unknown as {
     get(target: string): unknown
   }
@@ -51,12 +52,14 @@ export function projectConversationSnapshotAtCursor(
 
   const inputs = playbackEventsOf(snapshot).entries
     .filter(({ event }) => event.seq <= cursorSeq)
-    .map(({ event, view }) => ({ event, view }))
+    .map(({ event }) => ({ type: 'event' as const, event }))
   const assembler = new ConversationNodeAssembler(
     conversationRuntime.events,
     conversationRuntime.views,
   )
   assembler.replaceWindow(inputs, snapshot.hasMore)
+  assembler.activateTarget('chat')
+  assembler.activateTarget(PLAYBACK_TARGET)
   assembler.flush()
 
   const chat = assembler.snapshot('chat') as ChatSnapshot | undefined
@@ -73,16 +76,9 @@ export function projectConversationSnapshotAtCursor(
     ...snapshot,
     views,
     chat,
-    nodes: chat.legacy.nodes,
-    turnTimings: chat.legacy.turnTimings,
-    turnEnds: chat.legacy.turnEnds,
-    partial: chat.legacy.partial,
-    runningCalls: chat.legacy.runningCalls,
-    pending: [],
-    queue: [],
+    pendingSubmissions: [],
     running: false,
     loadingOlder: false,
     promptError: null,
-    lastAgentError: null,
   }
 }

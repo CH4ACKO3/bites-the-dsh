@@ -473,15 +473,19 @@ export class SessionPlaybackController implements SessionPlayback {
     }
   }
 
+  release(sessionId: string): void {
+    const state = this.#states.get(sessionId)
+    if (state === undefined) return
+    this.#cancelFrame(sessionId)
+    if (state.mode !== 'live') this.#readonlyEffect(sessionId, false)
+    this.#listeners.delete(sessionId)
+    this.#stores.delete(sessionId)
+    this.#states.delete(sessionId)
+    this.#runtimes.delete(sessionId)
+  }
+
   dispose(): void {
-    for (const sessionId of this.#states.keys()) {
-      this.#cancelFrame(sessionId)
-      if (this.#state(sessionId).mode !== 'live') this.#readonlyEffect(sessionId, false)
-    }
-    this.#listeners.clear()
-    this.#stores.clear()
-    this.#states.clear()
-    this.#runtimes.clear()
+    for (const sessionId of this.#states.keys()) this.release(sessionId)
   }
 
   #tick(sessionId: string, now: number): void {

@@ -1,5 +1,8 @@
-import type { ClientContext, SessionBinding } from '@deepseek-ai/dsh-client-runtime/client'
-import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import './contract.js'
 import { PlaybackControls } from './PlaybackControls.js'
@@ -34,8 +37,8 @@ export const name = '@ch4acko3/bites-the-dsh'
 export const inject = [
   'slots',
   'sessions',
-  'conversationEvents',
-  'conversationViews',
+  'uiConversation',
+  'uiSession',
   'conversation',
   'locale',
 ] as const
@@ -59,10 +62,12 @@ export function apply(ctx: ClientContext): void {
 
   const attach = (binding: SessionBinding) => {
     if (!sessionSubscriptions.has(binding.sessionId)) {
+      const conversation = ctx.uiConversation.binding(binding)
+      conversation.activate('session-playback')
       playback.setHistoryLoader(binding.sessionId, () => binding.session.loadOlder())
       const sync = () => {
         const snapshot = binding.session.getSnapshot()
-        const events = playbackEventsOf(snapshot).entries.map(({ event, location }) => ({
+        const events = playbackEventsOf(conversation.snapshot.getSnapshot()).entries.map(({ event, location }) => ({
           seq: event.seq,
           time: event.time,
           turn: location.kind === 'turn' || location.kind === 'step'
@@ -73,6 +78,7 @@ export function apply(ctx: ClientContext): void {
       }
       sync()
       const unsubscribeSession = binding.session.subscribe(sync)
+      const unsubscribeConversation = conversation.snapshot.subscribe(sync)
       const unsubscribePlayback = playback.subscribe(binding.sessionId, (state) => {
         const snapshot = binding.session.getSnapshot()
         if (
@@ -87,13 +93,19 @@ export function apply(ctx: ClientContext): void {
       sessionSubscriptions.set(binding.sessionId, () => {
         unsubscribePlayback()
         unsubscribeSession()
+        unsubscribeConversation()
       })
+      binding.ctx.effect(() => () => {
+        sessionSubscriptions.get(binding.sessionId)?.()
+        sessionSubscriptions.delete(binding.sessionId)
+        playback.release(binding.sessionId)
+      }, 'bites-the-dsh: release session feed')
     }
     return playback.storeFor(binding.sessionId)
   }
 
   ctx.effect(() => {
-    const disposeProvider = ctx.sessions.provide({
+    const disposeProvider = ctx.uiSession.provide({
       hooks: ['playback'],
       resolve: (binding) => ({
         hooks: { playback: attach(binding) },

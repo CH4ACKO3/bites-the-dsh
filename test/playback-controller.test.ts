@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import type {
-  ConversationSnapshot,
-  UseConversationSession,
-} from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionSnapshot as ConversationSnapshot } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'
+type UseConversationSession = SnapshotSelectorHook<ConversationSnapshot>
 import {
   SessionPlaybackController,
   type PlaybackFrameClock,
 } from '../src/client/playback-controller.ts'
-import { bindProjectedSession } from '../src/client/session-hook.ts'
+import { bindProjectedSession, bindProjectedKeyedHook } from '../src/client/session-hook.ts'
 
 const initialEvents = [
   { seq: 2, time: 100 },
@@ -327,4 +326,33 @@ test('disposal releases read-only state even before an event window is synced', 
     ['session', true],
     ['session', false],
   ])
+})
+
+
+test('keyed chat reads preserve subscriptions without exposing live nodes', () => {
+  const keys: string[] = []
+  const hook = bindProjectedKeyedHook((key: string) => { keys.push(key); return { text: 'future' } },
+    key => key === 'past' ? { text: 'history' } : undefined)
+  assert.deepEqual(hook('past'), { text: 'history' })
+  assert.equal(hook('future', value => value?.text), undefined)
+  assert.deepEqual(keys, ['past', 'future'])
+})
+
+test('release clears readonly state and ignores late history completion', async () => {
+  const effects: boolean[] = []
+  const playback = new SessionPlaybackController()
+  playback.setReadonlyEffect((_id, enabled) => effects.push(enabled))
+  playback.syncEvents('session', initialEvents, true)
+  playback.enter('session')
+  let resolve!: () => void
+  playback.setHistoryLoader('session', () => new Promise<void>(done => { resolve = done }))
+  const loading = playback.loadOlder('session')
+  playback.release('session')
+  playback.syncEvents('session', [{ seq: 99, time: 999 }], false)
+  resolve()
+  await loading
+  assert.equal(playback.getState('session').mode, 'live')
+  assert.equal(playback.getState('session').cursorSeq, 99)
+  assert.deepEqual(effects, [true, false])
+  playback.dispose()
 })

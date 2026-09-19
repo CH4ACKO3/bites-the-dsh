@@ -1,13 +1,12 @@
 import type { ComponentType, ReactNode } from 'react'
 import { createContext, useContext, useMemo, useRef, useSyncExternalStore } from 'react'
 import type {
-  ChatViewSlotProps,
   ConversationSlotProps,
+  ConversationSnapshot as NativeConversationSnapshot,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
-import type {
-  ConversationSnapshot,
-  SessionId,
-} from '@deepseek-ai/dsh-client-runtime/client'
+import type { ChatViewSlotProps } from '@deepseek-ai/dsh-client-ui-chat/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { PlaybackSnapshot as ConversationSnapshot } from './playback-snapshot.js'
 import type { PlaybackState } from './playback-controller.js'
 import {
   playbackEventsOf,
@@ -15,7 +14,7 @@ import {
 } from './playback-projection.js'
 import { withConversationPlaybackClock } from './projection-clock.js'
 import { playbackController } from './runtime.js'
-import { bindProjectedSession } from './session-hook.js'
+import { bindProjectedSession, bindProjectedKeyedHook } from './session-hook.js'
 import {
   bindSimulatedInput,
   type MaybeInputHook,
@@ -34,7 +33,7 @@ type InputBarRuntimeProps = Record<string, unknown> & {
   disabled?: boolean
   useInput: MaybeInputHook
   usePlayback: <Selected>(selector: (state: PlaybackState) => Selected) => Selected | undefined
-  useSession: <Selected>(selector: (state: ConversationSnapshot) => Selected) => Selected | undefined
+  useConversation: <Selected>(selector: (state: NativeConversationSnapshot) => Selected) => Selected | undefined
 }
 
 type MessageIconActionsRuntimeProps = Record<string, unknown> & {
@@ -71,7 +70,7 @@ export function decorateInputBar(Original: ComponentType<InputBarRuntimeProps>) 
   return function PlaybackInputBar(props: InputBarRuntimeProps) {
     const historical = useContext(HistoricalPlaybackContext)
     const playback = props.usePlayback((state) => state)
-    const entries = props.useSession((snapshot) => playbackEventsOf(snapshot).entries) ?? []
+    const entries = props.useConversation((snapshot) => playbackEventsOf(snapshot).entries) ?? []
     const simulatedPreview = useMemo(
       () => historical && playback?.simulateTyping
         ? simulatedInputPreview(entries, playback)
@@ -110,7 +109,10 @@ export function decorateMessageIconActions(Original: ComponentType<MessageIconAc
 export function decorateChatView(Original: ComponentType<ChatViewSlotProps>) {
   return function PlaybackChatView(props: ChatViewSlotProps) {
     const playback = props.usePlayback((value) => value)
-    const liveSnapshot = props.useSession((value) => value)
+    const session = props.useSession((value) => value)
+    const conversation = props.useConversation((value) => value)
+    const chat = props.useChat((value) => value)
+    const liveSnapshot = useMemo(() => ({ ...session, ...conversation, chat }), [session, conversation, chat])
     const projectionCache = useRef<{
       cursorSeq: number
       hasMore: boolean
@@ -173,10 +175,25 @@ export function decorateChatView(Original: ComponentType<ChatViewSlotProps>) {
       () => bindProjectedSession(props.useSession, projected),
       [projected, props.useSession],
     )
+    const historical = playback.mode !== 'live'
+    const useChat: ChatViewSlotProps['useChat'] = selector => {
+      props.useChat(selector)
+      return selector(projected.chat)
+    }
+    const useChatNode = bindProjectedKeyedHook(props.useChatNode, key => projected.chat.nodes.get(key))
+    const useChatNodeProcess = bindProjectedKeyedHook(props.useChatNodeProcess, key => projected.chat.nodes.processSource(key).getSnapshot())
+    const useProjection = ((key: string, selector?: (value: undefined) => unknown) => {
+      props.useProjection(key as never)
+      return selector?.(undefined)
+    }) as ChatViewSlotProps['useProjection']
 
     return <Original
       {...props}
       useSession={playback.mode === 'live' ? props.useSession : useProjectedSession}
+      useChat={historical ? useChat : props.useChat}
+      useChatNode={historical ? useChatNode : props.useChatNode}
+      useChatNodeProcess={historical ? useChatNodeProcess : props.useChatNodeProcess}
+      useProjection={historical ? useProjection : props.useProjection}
     />
   }
 }

@@ -1,3 +1,9 @@
+## Unreleased
+
+- Migrate playback to native Conversation, Chat and Session services in DSH 0.1.5/0.1.6.
+- Project keyed chat reads onto historical nodes and release Session-owned playback state on disposal.
+- Require DSH 0.1.5 or 0.1.6; previous releases retain the older DSH baseline.
+
 # Changelog
 
 ## 0.2.1 — 2026-08-21

@@ -18,6 +18,7 @@ class FakeConversationNodeAssembler {
   }
 
   flush() {}
+  activateTarget() {}
 
   snapshot(target) {
     if (target !== 'chat') return undefined
@@ -55,7 +56,7 @@ async function loadClientBundle() {
         client = factory((id) => {
           if (id === 'react') return React
           if (id === 'react/jsx-runtime') return jsxRuntime
-          if (id === '@deepseek-ai/dsh-client-runtime/client') {
+          if (id === '@deepseek-ai/dsh-client-ui-conversation/client') {
             return { ConversationNodeAssembler: FakeConversationNodeAssembler }
           }
           throw new Error(`Unexpected client dependency: ${id}`)
@@ -97,17 +98,20 @@ test('built client wires native replay, recovery UI, and stable historical proje
   let activeLocale = 'en'
   let dictionaries
   const ctx = {
-    conversationEvents: {
+    uiConversation: {
+      binding: () => ({ activate() {}, snapshot: { getSnapshot: () => snapshot, subscribe: () => () => {} } }),
+      events: {
       register(definition) {
         rawEventDefinition = definition
         return () => {}
       },
     },
-    conversationViews: {
+      views: {
       register(definition) {
         rawEventView = definition
         return () => {}
       },
+    },
     },
     conversation: { blocks },
     locale: {
@@ -128,7 +132,7 @@ test('built client wires native replay, recovery UI, and stable historical proje
       const cleanup = run()
       if (typeof cleanup === 'function') effects.push(cleanup)
     },
-    sessions: {
+    uiSession: {
       provide(provider) {
         sessionProvider = provider
         return () => {}
@@ -179,6 +183,7 @@ test('built client wires native replay, recovery UI, and stable historical proje
   }
   const binding = {
     sessionId: 'session',
+    ctx: { effect: () => {} },
     session: {
       getSnapshot: () => snapshot,
       subscribe: () => () => {},
@@ -274,15 +279,17 @@ test('built client wires native replay, recovery UI, and stable historical proje
   await act(async () => playback.pause('session'))
 
   function ProjectedProbe(props) {
-    const value = props.useSession((value) => ({
-      nodes: value.nodes,
-      clock: value.chat.timeline.playbackClock,
+    const value = props.useChat((value) => ({
+      nodes: value.legacy.nodes,
+      clock: value.timeline.playbackClock,
     }))
     return React.createElement('output', null, JSON.stringify(value))
   }
   const DecoratedProbe = client.decorateChatView(ProjectedProbe)
   const useSession = (selector) => selector(snapshot)
-  const projectionElement = () => React.createElement(DecoratedProbe, { usePlayback, useSession })
+  const useConversation = selector => selector(snapshot)
+  const useChat = selector => selector(snapshot.chat)
+  const projectionElement = () => React.createElement(DecoratedProbe, { usePlayback, useSession, useConversation, useChat })
   let projection
   await act(async () => {
     projection = create(projectionElement())

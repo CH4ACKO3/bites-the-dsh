@@ -1,14 +1,14 @@
 import type {
-  ConversationSnapshot,
   ConversationTimelineSnapshot,
-} from '@deepseek-ai/dsh-client-runtime/client'
+} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { PlaybackSnapshot as ConversationSnapshot } from './playback-snapshot.js'
 
 export interface PlaybackProjectionClock {
   readonly kind: 'historical'
   readonly time: number
 }
 
-declare module '@deepseek-ai/dsh-client-runtime/client' {
+declare module '@deepseek-ai/dsh-client-ui-conversation/client' {
   interface ConversationTimelineSnapshot {
     readonly playbackClock?: PlaybackProjectionClock
   }

@@ -1,16 +1,17 @@
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type {
-  ConversationEventInput,
   ConversationLocation,
   ConversationNodeDefinition,
   ConversationViewBuilder,
   ConversationViewDefinition,
   ConversationViewNode,
-} from '@deepseek-ai/dsh-client-runtime/client'
+} from '@deepseek-ai/dsh-client-ui-conversation/client'
 
 export const PLAYBACK_TARGET = 'session-playback'
 
-export interface PlaybackEntry extends ConversationEventInput {
+export interface PlaybackEntry {
+  readonly event: SessionEvent
   readonly location: ConversationLocation
 }
 
@@ -24,7 +25,7 @@ export interface PlaybackEventSnapshot {
   readonly entries: readonly PlaybackEntry[]
 }
 
-declare module '@deepseek-ai/dsh-client-runtime/client' {
+declare module '@deepseek-ai/dsh-client-ui-conversation/client' {
   interface ConversationViewSnapshotMap {
     'session-playback': PlaybackEventSnapshot
   }
@@ -37,6 +38,7 @@ const rawEventDefinition: ConversationNodeDefinition<PlaybackEntry> = {
   target: PLAYBACK_TARGET,
 
   match(event) {
+    if (event.type === 'assistant/live-chunk') return null
     return {
       id: String(event.seq),
       role: 'start',
@@ -46,7 +48,6 @@ const rawEventDefinition: ConversationNodeDefinition<PlaybackEntry> = {
   start(_context, match) {
     return {
       event: match.event,
-      view: match.view,
       location: match.location,
     }
   },
@@ -56,7 +57,7 @@ const rawEventDefinition: ConversationNodeDefinition<PlaybackEntry> = {
   },
 
   publication(match) {
-    return match.event.type === 'assistant/chunk' ? 'animation-frame' : 'immediate'
+    return 'immediate'
   },
 
   buildViewNode(context) {
@@ -102,11 +103,11 @@ const rawEventView: ConversationViewDefinition<PlaybackEventNode, PlaybackEventS
 
 export function registerPlaybackEvents(ctx: ClientContext): void {
   ctx.effect(
-    () => ctx.conversationViews.register(rawEventView),
+    () => ctx.uiConversation.views.register(rawEventView),
     'bites-the-dsh: raw event view',
   )
   ctx.effect(
-    () => ctx.conversationEvents.register(rawEventDefinition),
+    () => ctx.uiConversation.events.register(rawEventDefinition),
     'bites-the-dsh: raw event definition',
   )
 }
