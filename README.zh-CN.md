@@ -8,7 +8,7 @@
 
 https://github.com/user-attachments/assets/3c9dfdcf-a454-4750-9edf-76771ed5a9a6
 
-演示中同时使用了 Bites the DSH 与 [dsh-turn-fold](https://github.com/CH4ACKO3/dsh-turn-fold)。
+演示中同时使用了 Bites the DSH 与 [dsh-turn-fold](https://github.com/memorax-ai/dsh-turn-fold)。
 
 插件直接将原生会话切换为回放视图，不会打开新的面板。点击原生会话标题栏中的一个按钮即可进入回放。回放期间，会话完全只读：原生输入框以及会改变会话的操作都会被禁用，但界面和脚本仍可自由移动时间光标，不会修改源会话。
 
