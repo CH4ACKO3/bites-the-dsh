@@ -1,4 +1,8 @@
-## Unreleased
+## 0.3.1 — 2026-09-24
+
+- Publish from the `memorax-ai` organization repository with updated package metadata.
+
+## 0.3.0 — 2026-09-19
 
 - Migrate playback to native Conversation, Chat and Session services in DSH 0.1.5/0.1.6.
 - Project keyed chat reads onto historical nodes and release Session-owned playback state on disposal.
